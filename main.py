@@ -45,6 +45,7 @@ parser.add_argument('-cuda', dest='cuda', help='Use cuda if available.', action=
 
 
 parser.add_argument('-split', '--split', dest='split', help='The type of data splits.', type=str, default='all', choices=['all', 'uni', 'cla', 'pow'])
+parser.add_argument('-same', action='store_true', help='Distribute the same gradients for all agents.')
 
 cmd_args = parser.parse_args()
 
@@ -258,15 +259,18 @@ for N, sample_size_cap in agent_iterations:
                 flat_aggre_grad = flatten(aggregated_gradient)
 
                 # phis = torch.zeros(N, device=device)
+                # 计算的是客户端上传上来的梯度update与服务端根据权重聚合的梯度update的余弦相似度，每个客户端都对比，最后得出一个相似度数组
                 phis = torch.tensor([F.cosine_similarity(flatten(gradient), flat_aggre_grad, 0, 1e-10) for gradient in gradients], device=device)
                 past_phis.append(phis)
 
+                # 相似度越大，rs对应的元素越大（累计）
                 rs = args['alpha'] * rs + (1 - args['alpha']) * phis
 
                 rs = torch.clamp(rs, min=1e-3) # make sure the rs do not go negative
                 rs = torch.div(rs, rs.sum()) # normalize the weights to 1 
                 
                 # --- altruistic degree function
+                # 可能是用于分配贡献的
                 q_ratios = torch.tanh(args['beta'] * rs) 
                 q_ratios = torch.div(q_ratios, torch.max(q_ratios))
                 
@@ -276,7 +280,10 @@ for N, sample_size_cap in agent_iterations:
 
                 for i in range(N):
 
-                    reward_gradient = mask_grad_update_by_order(aggregated_gradient, mask_percentile=q_ratios[i], mode='layer')
+                    if args.same:
+                        reward_gradient = aggregated_gradient
+                    else:
+                        reward_gradient = mask_grad_update_by_order(aggregated_gradient, mask_percentile=q_ratios[i], mode='layer')
 
                     add_update_to_model(agent_models[i], reward_gradient)
 
@@ -287,7 +294,12 @@ for N, sample_size_cap in agent_iterations:
 
                     reward_last_layer[str(i)+'cos'].append(F.cosine_similarity(flatten(reward_gradient[-2]), flatten(aggregated_gradient[-2]), 0, 1e-10).item()  )
                     reward_last_layer[str(i)+'l2'].append(norm(flatten(reward_gradient[-2])- flatten(aggregated_gradient[-2])).item())
-
+                
+                if args.same:
+                    for i in range(1, N):
+                        for param1, param2 in zip(agent_models[i].parameters(), agent_models[i].parameters()):
+                            assert torch.equal(param1, param2)
+                    print("Models are the same")
 
                 weights = torch.div(shard_sizes, torch.sum(shard_sizes)) if iteration == 0 else rs
 
