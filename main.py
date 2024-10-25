@@ -282,7 +282,7 @@ for N, sample_size_cap in agent_iterations:
 
                 for i in range(N):
 
-                    if args.same:
+                    if args['same']:
                         reward_gradient = aggregated_gradient
                     else:
                         reward_gradient = mask_grad_update_by_order(aggregated_gradient, mask_percentile=q_ratios[i], mode='layer')
@@ -297,7 +297,7 @@ for N, sample_size_cap in agent_iterations:
                     reward_last_layer[str(i)+'cos'].append(F.cosine_similarity(flatten(reward_gradient[-2]), flatten(aggregated_gradient[-2]), 0, 1e-10).item()  )
                     reward_last_layer[str(i)+'l2'].append(norm(flatten(reward_gradient[-2])- flatten(aggregated_gradient[-2])).item())
                 
-                if args.same:
+                if args['same']:
                     for i in range(1, N):
                         for param1, param2 in zip(agent_models[i].parameters(), agent_models[i].parameters()):
                             assert torch.equal(param1, param2)
