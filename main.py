@@ -366,6 +366,11 @@ for N, sample_size_cap in agent_iterations:
                 df = pd.DataFrame(qs_dict)
                 df.to_csv(('qs.csv'), index=False)
 
+                # phi values
+                past_phis = torch.stack(past_phis).detach().cpu().numpy()
+                df = pd.DataFrame(past_phis)
+                df.to_csv(('phis.csv'), index=False)
+
                 # federated performance (local objectives weighted w.r.t the importance coefficient rs)
                 df = pd.DataFrame(fed_perfs)
                 df.to_csv(('fed.csv'), index=False)
