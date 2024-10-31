@@ -232,7 +232,7 @@ for N, sample_size_cap in agent_iterations:
                     # add_update_to_model(model, gradient, device=device)
 
                     # append the normalzied gradient
-                    if not args.no_norm:
+                    if not args['no_norm']:
                         flattened = flatten(gradient)
                         norm_value = norm(flattened) + 1e-7 # to prevent division by zero
                             
