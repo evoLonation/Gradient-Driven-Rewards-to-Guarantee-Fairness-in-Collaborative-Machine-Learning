@@ -46,6 +46,7 @@ parser.add_argument('-cuda', dest='cuda', help='Use cuda if available.', action=
 
 parser.add_argument('-split', '--split', dest='split', help='The type of data splits.', type=str, default='all', choices=['all', 'uni', 'cla', 'pow'])
 parser.add_argument('-same', action='store_true', help='Distribute the same gradients for all agents.')
+parser.add_argument('-no_norm', action='store_true', help='Do not normalize the gradients.')
 
 cmd_args = parser.parse_args()
 
@@ -231,10 +232,11 @@ for N, sample_size_cap in agent_iterations:
                     # add_update_to_model(model, gradient, device=device)
 
                     # append the normalzied gradient
-                    flattened = flatten(gradient)
-                    norm_value = norm(flattened) + 1e-7 # to prevent division by zero
-                         
-                    gradient = unflatten(torch.multiply(torch.tensor(args['Gamma']), torch.div(flattened,  norm_value)), gradient)
+                    if not args.no_norm:
+                        flattened = flatten(gradient)
+                        norm_value = norm(flattened) + 1e-7 # to prevent division by zero
+                            
+                        gradient = unflatten(torch.multiply(torch.tensor(args['Gamma']), torch.div(flattened,  norm_value)), gradient)
                     gradients.append(gradient)
 
                         
