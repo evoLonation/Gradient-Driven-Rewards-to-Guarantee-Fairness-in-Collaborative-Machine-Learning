@@ -298,9 +298,13 @@ for N, sample_size_cap in agent_iterations:
                     reward_last_layer[str(i)+'l2'].append(norm(flatten(reward_gradient[-2])- flatten(aggregated_gradient[-2])).item())
                 
                 if args['same']:
+                    agent_model_0 = agent_models[0]
                     for i in range(1, N):
                         for param1, param2 in zip(agent_models[i].parameters(), agent_models[0].parameters()):
                             assert torch.equal(param1, param2)
+                        agent_model = agent_models[i]
+                        for key in agent_model_0.state_dict().keys():
+                            assert torch.equal(agent_model.state_dict()[key], agent_model_0.state_dict()[key])
                     print("Models are the same")
 
                 weights = torch.div(shard_sizes, torch.sum(shard_sizes)) if iteration == 0 else rs
