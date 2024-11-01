@@ -299,7 +299,7 @@ for N, sample_size_cap in agent_iterations:
                 
                 if args['same']:
                     for i in range(1, N):
-                        for param1, param2 in zip(agent_models[i].parameters(), agent_models[i].parameters()):
+                        for param1, param2 in zip(agent_models[i].parameters(), agent_models[0].parameters()):
                             assert torch.equal(param1, param2)
                     print("Models are the same")
 
